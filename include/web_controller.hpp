@@ -2,6 +2,7 @@
 #define WEB_CONTROLLER_H
 
 #define WEB_UPDATE_COOLDOWN 50
+#define WEB_WIFI_STOP_RETRY_AFTER 60000
 
 void web_controller_setup();
 void web_controller_loop();

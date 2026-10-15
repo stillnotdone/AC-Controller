@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
-#include "web_controller.h"
-#include "ac_controller.h"
-#include "secrets.h"
+#include "web_controller.hpp"
+#include "ac_controller.hpp"
+#include "secrets.hpp"
 
 #ifdef ESP32
 #include <WiFi.h>
@@ -41,29 +41,35 @@ bool is_rate_limited() {
 }
 
 bool is_authorized() {
-  if(server.hasHeader("X-Api-Key")) {
-    return server.header("X-Api-Key") == api_key;
-  }
+  if(server.hasHeader("X-Api-Key")) return server.header("X-Api-Key") == api_key;
   return false;
 }
 
 bool should_respond() {
-  if(!is_authorized()) {
-    error_response(401, "unauthorized");
-    return false;
-  }
   if(is_rate_limited()) {
     error_response(429, "too many requests");
+    return false;
+  }
+  if(!is_authorized()) {
+    error_response(401, "unauthorized");
     return false;
   }
   return true;
 }
 
-int resolve_name(const char **names, const char *input) {
+void do_command(ACCommand command) {
+  bool success = ac_run_command(command);
+  if(success)
+    good_response();
+  else
+    error_response(503, "command queue full");
+}
+
+int resolve_name(const char * const* names, const char *input) {
   for(int i = 0; i < AC_NAME_COUNT; i++) {
     if(strcasecmp(input, names[i]) == 0) return i;
   }
-  return -1;   // not found
+  return -1;
 }
 
 void post_update_api() {
@@ -93,9 +99,7 @@ void post_update_api() {
   if(temp != -1)  ac_set_temp((uint8_t)temp);
   if(mode != -1)  ac_set_mode((ACMode)mode);
 
-  ac_update_state();
-
-  good_response();
+  do_command(AC_COMMAND_UPDATE);
 }
 
 void post_sync() {
@@ -104,30 +108,27 @@ void post_sync() {
   good_response();
 }
 
-void do_command(ACCommand command) {
-  if(!should_respond()) return;
-  ac_run_command(command);
-  good_response();
-}
-
 void toggle_energy_saver() {
+  if(!should_respond()) return;
   do_command(AC_COMMAND_TOGGLE_ENERGY_SAVER);
 }
 
 void toggle_off() {
+  if(!should_respond()) return;
   do_command(AC_COMMAND_OFF);
 }
 
 void get_ac_status() {
+  const ACStatus *stat = ac_get_status();
   char status[128];
 
   snprintf(status, sizeof(status),
     "{\"mode\":\"%s\",\"speed\":\"%s\",\"temp\":%d, \"enabled\":%s,\"energy_saver\":%s}",
-    ACModeNames[ac_get_mode()],
-    ACSpeedNames[ac_get_speed()],
-    ac_get_temp(),
-    ac_is_enabled() ? "true" : "false",
-    ac_is_energy_saver() ? "true" : "false"
+    ACModeNames[stat->mode],
+    ACSpeedNames[stat->speed],
+    stat->temp,
+    stat->enabled ? "true" : "false",
+    stat->energy_saver ? "true" : "false"
   );
 
   server.send(200, "application/json", status);
@@ -135,20 +136,10 @@ void get_ac_status() {
 
 void connect_to_wifi() {
   WiFi.mode(WIFI_STA);
-
-  // prolly not gonna be assigned by DHCP on my network, so just hardcode it for now
-  IPAddress LOCALIP(192, 168, 18, 200);
-  IPAddress GATEWAY(192, 168, 18, 1);
-  IPAddress SUBNET(255, 255, 255, 0);
-  IPAddress DNS(192, 168, 18, 1);
-  if (!WiFi.config(LOCALIP, GATEWAY, SUBNET, DNS)) {
-    Serial.println("IP configuration failed");
-  }
-
   WiFi.begin(ssid, password);
 
   unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 20000) {
+  while (WiFi.status() != WL_CONNECTED && millis() - start < WEB_WIFI_STOP_RETRY_AFTER) {
     delay(500);
     Serial.print(".");
   }
