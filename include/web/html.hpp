@@ -1,13 +1,9 @@
-#ifndef WEB_CONTROLLER_H
-#define WEB_CONTROLLER_H
+#ifndef WEB_HTML_H
+#define WEB_HTML_H
 
-#define WEB_UPDATE_COOLDOWN 50
-#define WEB_WIFI_STOP_RETRY_AFTER 60000
+#include <Arduino.h>
 
-void web_controller_setup();
-void web_controller_loop();
-
-const char WEB_UPDATE_PAGE[] PROGMEM = R"rawliteral(
+const char WEB_UPDATER_HTML[] PROGMEM = R"html(
   <!DOCTYPE html>
   <html>
   <head>
@@ -25,7 +21,7 @@ const char WEB_UPDATE_PAGE[] PROGMEM = R"rawliteral(
       <button type="submit">Apply</button>
     </form>
 
-    <form action="/api/toggle_off" method="post">
+    <form action="/api/disable" method="post">
       <button type="submit">Off</button>
     </form>
 
@@ -65,6 +61,6 @@ const char WEB_UPDATE_PAGE[] PROGMEM = R"rawliteral(
     </script>
   </body>
   </html>
-  )rawliteral";
+  )html";
 
 #endif

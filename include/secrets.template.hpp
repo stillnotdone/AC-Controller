@@ -1,9 +1,9 @@
 #ifndef SECRETS_H
 #define SECRETS_H
 
-const char *ssid = "network ssid";
-const char *password = "network password";
+const char *const ssid = "network ssid";
+const char *const password = "network password";
 
-const char *api_key = "api key";
+const char *const api_key = "api key";
 
 #endif
