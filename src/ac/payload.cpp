@@ -35,7 +35,7 @@ void ac_apply_command(uint8_t payload[6], ACCommand command) {
     case AC_COMMAND_OFF: {
       ac_status.enabled = false;
       ac_status.energy_saver = true; // ac powers on with energy saver mode by default, keep synced
-      payload[1] &= ~AC_POWER_ON_MASK; // set toggle 0
+      payload[1] &= ~AC_POWER_ON_MASK;
       payload[5] &= ~AC_POWER_ON_MASK;
       break;
     }
