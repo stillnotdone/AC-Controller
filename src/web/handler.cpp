@@ -36,14 +36,7 @@ void web_setup() {
   web_server.collectHeaders("X-Api-Key");
 #endif
 
-  web_server.onNotFound(web_not_found);
-  web_server.on("/", HTTP_GET, web_update_page);
-  web_server.on("/api/sync", HTTP_POST, api_post_sync);
-  web_server.on("/api/status", HTTP_GET, api_get_status);
-  web_server.on("/api/update", HTTP_POST, api_post_update);
-  web_server.on("/api/disable", HTTP_POST, api_post_ac_off);
-  web_server.on("/api/toggle_energy_saver", HTTP_POST, api_post_toggle_energy_saver);
-
+  web_api_setup();
   web_server.begin();
 }
 
