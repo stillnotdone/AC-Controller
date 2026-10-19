@@ -34,7 +34,6 @@ typedef enum {
   AC_SPEED_HIGH
 } ACSpeed;
 
-// first 3 lsb are the mode bits on the 6th byte of the payload
 typedef enum {
   AC_MODE_FAN,
   AC_MODE_AUTO,
