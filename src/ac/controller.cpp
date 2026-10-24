@@ -2,15 +2,17 @@
 #include "ac/midea.hpp"
 #include "ac/payload.hpp"
 
-ACStatus ac_status = {AC_DEFAULT_TEMP, AC_SPEED_LOW, AC_MODE_FAN, false, false};
+#include <IRremote.hpp>
+
+ACStatus ac_status = {AC_DEFAULT_TEMP, AC_DEFAULT_SPEED, AC_DEFAULT_MODE, false, false};
 
 static struct ACCommandQueue {
-  ACCommand stack[AC_COMMAND_STACK_SIZE];
+  ACCommand stack[AC_COMMAND_QUEUE_SIZE];
   size_t ptr;
 } ac_command_queue;
 
 static bool ac_push_command(ACCommand command) {
-  if (ac_command_queue.ptr >= AC_COMMAND_STACK_SIZE) return false;
+  if (ac_command_queue.ptr >= AC_COMMAND_QUEUE_SIZE) return false;
   ac_command_queue.stack[ac_command_queue.ptr++] = command;
   return true;
 }
@@ -27,9 +29,9 @@ void ac_sync_state(bool restore_old_state) {
   bool is_enabled = ac_status.enabled;
   bool is_energy_saver = ac_status.energy_saver;
 
-  if(restore_old_state) {
+  if(restore_old_state && is_enabled) {
     if(!is_energy_saver) ac_push_command(AC_COMMAND_TOGGLE_ENERGY_SAVER);
-    if(is_enabled) ac_push_command(AC_COMMAND_UPDATE);
+    ac_push_command(AC_COMMAND_UPDATE);
   }
   // sync energy saver and enabled state (energy saver = 1, enabled = 0)
   // this runs first because it's a stack queue
@@ -38,19 +40,34 @@ void ac_sync_state(bool restore_old_state) {
 
 void ac_loop() {
   static unsigned long last_command_time = 0;
-  if(millis() - last_command_time < AC_COMMAND_FREQ) return;
-  last_command_time = millis();
+  if(millis() - last_command_time < AC_COMMAND_UPDATE_FREQUENCY) return;
 
   ACCommand command;
   if(!ac_pop_command(&command)) return;
 
   uint8_t payload[6];
-
   ac_build_payload(payload);
   ac_apply_command(payload, command);
   ac_send_payload(payload);
 
+#ifdef AC_DOUBLE_SEND_PAYLOAD_DELAY
+  if(command != AC_COMMAND_TOGGLE_ENERGY_SAVER) {
+    delay(AC_DOUBLE_SEND_PAYLOAD_DELAY); 
+    ac_send_payload(payload);
+  }
+#endif
+
+  last_command_time = millis();
+
   Serial.printf("Sent IR: %s mode=%s speed=%s temp=%d enabled=%s energy_saver=%s\n", ACCommandNames[command], ACModeNames[ac_status.mode], ACSpeedNames[ac_status.speed], ac_status.temp, ac_status.enabled ? "true" : "false", ac_status.energy_saver ? "true" : "false");
+}
+
+void ac_setup() {
+  IrSender.begin(IR_SEND_PIN);
+}
+
+void ac_send_ir(uint16_t *out, uint16_t len) {
+  IrSender.sendRaw(out, len, AC_IR_FREQ); 
 }
 
 bool ac_run_command(ACCommand command) {

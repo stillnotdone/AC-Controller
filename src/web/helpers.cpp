@@ -2,6 +2,7 @@
 #include "web/html.hpp"
 #include "ac/controller.hpp"
 #include "secrets.hpp"
+#include "config.hpp"
 
 const char *web_bool2string(bool b) {
   return b ? "true" : "false";
@@ -26,7 +27,7 @@ void web_update_page() {
 static bool is_rate_limited() {
   static unsigned long last_web_update = 0;
   unsigned long now = millis();
-  if(now - last_web_update > WEB_UPDATE_COOLDOWN) {
+  if(now - last_web_update > WEB_UPDATE_FREQUENCY) {
     last_web_update = now;
     return false;
   }
@@ -34,7 +35,7 @@ static bool is_rate_limited() {
 }
 
 static bool is_authorized() {
-  if(web_server.hasHeader("X-Api-Key")) return web_server.header("X-Api-Key") == api_key;
+  if(web_server.hasHeader(WEB_API_KEY_HEADER)) return web_server.header(WEB_API_KEY_HEADER) == api_key;
   return false;
 }
 

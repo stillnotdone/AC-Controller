@@ -2,17 +2,11 @@
 #include "ac/controller.hpp"
 #include "ac/midea.hpp"
 
-#include <IRremote.hpp>
 
 // goes in bits 6-3 of byte 1
 static const uint8_t ACSpeedBits[4] = { 0b100, 0b001, 0b010, 0b011 };   // auto, low, med, high
 // goes in bits 2-0 of byte 1
 static const uint8_t ACModeBits[4]  = { 0b100, 0b010, 0b000, 0b001 };   // fan, auto, cool, dry
-
-// here because IRremote can only be included once
-void ac_setup() {
-  IrSender.begin(IR_SEND_PIN);
-}
 
 void ac_build_payload(uint8_t payload[6]) {
   uint8_t speed_bits = ac_can_change_speed() ? ACSpeedBits[ac_status.speed] : 0;
@@ -36,7 +30,7 @@ void ac_apply_command(uint8_t payload[6], ACCommand command) {
       ac_status.enabled = false;
       ac_status.energy_saver = true; // ac powers on with energy saver mode by default, keep synced
       payload[1] &= ~AC_POWER_ON_MASK;
-      payload[5] &= ~AC_POWER_ON_MASK;
+      payload[5] = midea_checksum(payload) & ~AC_POWER_ON_MASK;
       break;
     }
     case AC_COMMAND_TOGGLE_ENERGY_SAVER: {
@@ -48,7 +42,9 @@ void ac_apply_command(uint8_t payload[6], ACCommand command) {
       break;
     }
     case AC_COMMAND_UPDATE: 
-      ac_status.enabled = true; // send current state
+      if(ac_status.enabled) break;
+      ac_status.enabled = true;
+      ac_status.energy_saver = true;
       break;
     default: break;
   }
@@ -57,5 +53,5 @@ void ac_apply_command(uint8_t payload[6], ACCommand command) {
 void ac_send_payload(uint8_t payload[6]) {
   uint16_t out[AC_IR_BUF_SIZE];
   size_t len = midea_encode(out, payload);
-  IrSender.sendRaw(out, len, AC_IR_FREQ); 
+  ac_send_ir(out, len);
 }

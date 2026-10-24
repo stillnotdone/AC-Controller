@@ -3,24 +3,16 @@
 
 #include <Arduino.h>
 
-#define IR_SEND_PIN 4
+#include "config.hpp"
 
-#define AC_COMMAND_STACK_SIZE 10
-#define AC_COMMAND_FREQ 250 // ms
+#define IR_SEND_PIN AC_IR_LED_PIN
 
 #define AC_TEMP_BYTE_OFFSET 34
 #define AC_IR_BUF_SIZE 199
 #define AC_IR_FREQ 38
 
-#define AC_MIN_TEMP (uint8_t)62u
-#define AC_MAX_TEMP (uint8_t)86u
-#define AC_DEFAULT_TEMP (AC_MIN_TEMP + ((AC_MAX_TEMP - AC_MIN_TEMP) / 2))
-
-#define AC_DEFAULT_SPEED_MODE AC_MODE_FAN
-#define AC_DEFAULT_TEMP_MODE AC_MODE_COOL
 
 typedef enum {
-  AC_COMMAND_IDLE,
   AC_COMMAND_UPDATE,
   AC_COMMAND_OFF,
   AC_COMMAND_TOGGLE_ENERGY_SAVER,
@@ -68,7 +60,6 @@ static const char *const ACSpeedNames[AC_NAME_COUNT] = {
 };
 
 static const char *const ACCommandNames[AC_COMMAND_NONE] = {
-  "idle",
   "update",
   "off",
   "energy_saver"
@@ -76,6 +67,7 @@ static const char *const ACCommandNames[AC_COMMAND_NONE] = {
       
 bool ac_run_command(ACCommand command);
 void ac_sync_state(bool restore_old_state);
+void ac_send_ir(uint16_t *out, uint16_t len);
 
 bool ac_can_change_speed();
 bool ac_can_change_temp();

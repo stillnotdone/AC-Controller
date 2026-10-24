@@ -11,8 +11,6 @@
 #define AC_IGNORE_TEMP_BYTE 0x7E
 
 #define AC_POWER_ON_MASK 0b10000000
-#define AC_PAYLOAD_1_MODE_MASK 0b1111
-#define AC_PAYLOAD_5_MODE_MASK 0b111
 
 void ac_build_payload(uint8_t payload[6]);
 void ac_apply_command(uint8_t payload[6], ACCommand command);

@@ -5,6 +5,7 @@
 #include "web/api.hpp"
 #include "ac/controller.hpp"
 #include "secrets.hpp"
+#include "config.hpp"
 
 WebServerT web_server(80);
 
@@ -30,10 +31,10 @@ void web_setup() {
   connect_to_wifi();
 
 #ifdef ESP32
-  const char *APIHeaders[] = { "X-Api-Key" };
+  const char *APIHeaders[] = { WEB_API_KEY_HEADER };
   web_server.collectHeaders(APIHeaders, 1);
 #elif defined(ESP8266)
-  web_server.collectHeaders("X-Api-Key");
+  web_server.collectHeaders(WEB_API_KEY_HEADER);
 #endif
 
   web_api_setup();

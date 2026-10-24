@@ -1,9 +1,6 @@
 #ifndef WEB_HANDLER_H
 #define WEB_HANDLER_H
 
-#define WEB_UPDATE_COOLDOWN 50
-#define WEB_WIFI_STOP_RETRY_AFTER 60000
-
 #ifdef ESP32
 #include <WiFi.h>
 #include <WebServer.h>

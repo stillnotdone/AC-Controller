@@ -1,17 +1,18 @@
 # AC Controller
 
-ESP8266/ESP32 firmware that controls a AC over IR through a
+ESP firmware that controls a AC over IR through a
 web API.
 
 ## Setup
 
 1. Copy `include/secrets.template.hpp` to `include/secrets.hpp` and fill
    in your values.
-2. Set `IR_SEND_PIN` in `include/ac/controller.hpp` (default: GPIO4).
+2. Edit `include/config.hpp` to desired values.
 3. Build and upload
 
 ## Circuit
 
 ![Circuit](circuit/circuit.png)
 
-Adjust R1 to your IR LEDs current limit.
+Adjust R1/R2 to for current according to your LEDs specs, 
+but the default values should be safe.
